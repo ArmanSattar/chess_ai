@@ -6,6 +6,8 @@ machine_turn = False
 game_alive = True
 white_pieces = WhitePieces()
 black_pieces = BlackPieces()
+black_team_points = 0
+white_team_points = 0
 
 #alphabetical values
 alpha_values = {
@@ -42,6 +44,15 @@ row_values = {
     '8': chess_row_eight,
 }
 
+#piece value
+piece_value = {
+    'pawn' : 1,
+    'knight' : 3,
+    'bishop' : 3,
+    'rook' : 5,
+    'queen' : 9
+}
+
 def printer():
     #prints chess board
     print(' '.join(x for x in chess_row_eight))
@@ -55,23 +66,35 @@ def printer():
     print(' '.join(x for x in chess_row_letters))
 
 printer()
+
 #check feature
 def check(piece, colour, origin_x, origin_y):
     pass
 
 def kill(dead_piece, colour):
+    global white_team_points, black_team_points, piece_value
+
+    dead_pieces = str(dead_piece).split('_')
+    dead_piece_name = [x for x in dead_pieces if x in piece_value.keys()]
+    piece_equity = piece_value.get(''.join(dead_piece_name))
+
     if colour == 'white':
         del white_pieces.white_pieces[dead_piece]
         del white_pieces.symbols[dead_piece]
+        black_team_points += piece_equity
     else:
         del black_pieces.black_pieces[dead_piece]
         del black_pieces.black_symbols[dead_piece]
+        white_team_points += piece_equity
+
+    print(f'Black: {black_team_points} White: {white_team_points}')
 
 
 #moving rules for knights
 def knight(destination_x, destination_y, origin_x, origin_y):
     adjacent = (abs(int(destination_x) - int(origin_x))) ** 2
     opposite = (abs(int(destination_y) - int(origin_y))) ** 2
+
     if adjacent + opposite == 5:
         return True
     else:
@@ -105,6 +128,7 @@ def pawn(destination_x, destination_y, origin_x, origin_y, colour, piece, destin
             del white_pieces.symbols[piece]
             row_values['7'][origin_x] = '_'
             return True
+
         elif colour == 'black' and destination_y == '1' and (chess_row[destination_x] == '_' or (chess_row[destination_x] in [white_pieces.symbols[x] for x in white_pieces.symbols])):
             black_pieces.black_pieces[str(count)] = destination
             black_pieces.black_symbols[str(count)] = '♕'
@@ -113,6 +137,7 @@ def pawn(destination_x, destination_y, origin_x, origin_y, colour, piece, destin
             del black_pieces.black_symbols[piece]
             row_values['2'][origin_x] = '_'
             return True
+
         if colour == 'white':
             if piece in [x for x in white_pieces.two_step if white_pieces.two_step[x] == True]:
                 if (chess_row[destination_x] == '_' and adjacent + opposite == 4) and (chess_row_above[destination_x] == '_'):
@@ -239,13 +264,12 @@ def queen(destination_x, destination_y, origin_x, origin_y, colour):
     #if it is moving vertically or horizontally
     if height == 0 or width == 0:
         if rook(destination_x, destination_y, origin_x, origin_y, colour):
-            print('yes')
             return True
         else:
             return False
+    #if it is moving diagonally
     else:
-        if (bishop(destination_x, destination_y, origin_x, origin_y, colour)):
-            print('yes 2')
+        if bishop(destination_x, destination_y, origin_x, origin_y, colour):
             return True
         else:
             return False
@@ -391,6 +415,9 @@ def mover(current_position, piece, destination, colour):
 
                 #if the piece has killed
                 if len(dead_piece) == 1:
+                    if dead_piece[0] == 'black_king':
+                        print('White Wins!')
+                        quit()
                     kill(dead_piece[0], 'black')
             except KeyError:
                 printer()
@@ -418,7 +445,7 @@ def mover(current_position, piece, destination, colour):
                 if king(column_to_move, square_position_numb, column, current_position[-1:], 'black'):
                     answer = True
             if '♕' == black_pieces.black_symbols[piece]:
-                if king(column_to_move, square_position_numb, column, current_position[-1:], 'black'):
+                if queen(column_to_move, square_position_numb, column, current_position[-1:], 'black'):
                     answer = True
                     
         if answer:
@@ -432,6 +459,9 @@ def mover(current_position, piece, destination, colour):
 
             #if the piece has killed
             if len(dead_piece) == 1:
+                if dead_piece[0] == 'white_king':
+                    print('Black Wins!')
+                    quit()
                 kill(dead_piece[0], 'white')
         else:
             print('Can\'t move there')
